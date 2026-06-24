@@ -23,7 +23,7 @@ metrics.json                           # AUROC/AUPRC/CIs + operating threshold
 pip install "huggingface_hub[cli]"
 huggingface-cli login
 huggingface-cli repo create echonext-shd-models --type model
-huggingface-cli upload echonext-shd-models ./deploy_bundle . --repo-type model
+huggingface-cli upload aarshdesai04/echonext-shd-models ./deploy_bundle . --repo-type model
 ```
 For local dev, also copy `deploy_bundle/*` into `echonext-shd/models/`.
 
@@ -61,7 +61,7 @@ gcloud projects add-iam-policy-binding <PROJECT_ID> \
 
 ### GitHub repo configuration
 **Variables** (Settings → Secrets and variables → Actions → Variables):
-- `GCP_PROJECT_ID`, `GCP_REGION` (e.g. `us-central1`), `HF_MODEL_REPO` (e.g. `yourname/echonext-shd-models`)
+- `GCP_PROJECT_ID`, `GCP_REGION` (e.g. `us-central1`), `HF_MODEL_REPO` (`aarshdesai04/echonext-shd-models`)
 
 **Secrets**:
 - `GCP_WIF_PROVIDER` (full provider resource name), `GCP_DEPLOY_SA` (SA email)

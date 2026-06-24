@@ -15,7 +15,7 @@ served as a containerized API on Cloud Run with a live Gradio demo.
 | **Brier** | 0.158 | — | — |
 | Train size | ~72k ECGs | | 1.2M ECG–echo pairs |
 
-🔗 **Live demo:** _<HF Spaces link>_ · **API:** _<Cloud Run URL>_
+🔗 **Live demo:** [HF Spaces](https://huggingface.co/spaces/aarshdesai04/echonext-shd-demo) _(deploy in progress)_ · **API:** Cloud Run _(deploy in progress)_
 
 ## What's interesting here (engineering)
 - **Diagnosed and fixed a broken baseline**: the original 2D-CNN used `(1,1)`
@@ -75,6 +75,36 @@ curl -s localhost:8080/predict -H 'content-type: application/json' -d '{
 Training lives in [`notebooks/`](notebooks/) (Colab/Keras). The export cell
 writes the deploy bundle (models + scaler + sample ECGs + metrics) consumed by
 this service.
+
+## Model registry
+Trained ensembles are **versioned out-of-band** (never committed) so they can be
+reloaded without retraining. [`src/shd/registry.py`](src/shd/registry.py) backs a
+two-tier store: a durable local root (Google Drive) and the Hugging Face Hub
+([`aarshdesai04/echonext-shd-models`](https://huggingface.co/aarshdesai04/echonext-shd-models)),
+which is also what the Cloud Run deploy pulls from.
+
+```python
+from shd.registry import ModelRegistry
+HF = "aarshdesai04/echonext-shd-models"
+reg = ModelRegistry("registry")
+reg.pull_from_hf("registry.json", HF)     # fetch the index first
+best = reg.best("AUPRC")
+reg.pull_from_hf(best, HF)                 # fetch that version's bundle
+predictor = reg.load_predictor(best)       # best ensemble, no retraining
+```
+`reg.list()` shows every saved version with its metrics; `reg.best("AUPRC")`
+selects the top one.
+
+## Reproducibility
+The runs are **seeded** (`tf.keras.utils.set_random_seed`), which controls weight
+init, augmentation, and shuffling — giving statistical reproducibility (≈±0.003
+AUROC across seeds) and deterministic ensemble diversity. It is **not** bit-exact
+on GPU: mixed precision + non-deterministic cuDNN kernels add small jitter. The
+real guarantee is the **versioned saved weights** — the exact artifact behind the
+reported metrics is stored and reloadable. Each saved version records its seed,
+library versions, and hyperparameters (`metrics.json → provenance`). For a
+bit-exact reference run, enable `tf.config.experimental.enable_op_determinism()`
+(slower, and disable mixed precision).
 
 ## License & data
 Code: MIT. The ECG dataset is **not** redistributed here; sample inputs are

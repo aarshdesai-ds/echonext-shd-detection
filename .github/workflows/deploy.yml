@@ -16,7 +16,7 @@ env:
   REGION: ${{ vars.GCP_REGION }}            # e.g. us-central1
   SERVICE: echonext-shd-api
   REPO: echonext                            # Artifact Registry repo
-  HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}  # e.g. yourname/echonext-shd-models
+  HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}  # e.g. aarshdesai04/echonext-shd-models
 
 jobs:
   deploy:
