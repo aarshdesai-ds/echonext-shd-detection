@@ -1,0 +1,21 @@
+# Vertex AI custom prediction container (CPU). Serves app.vertex via the Vertex
+# online-prediction contract. Models are baked in at build time.
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    MODEL_DIR=/app/models \
+    PYTHONPATH=/app/src:/app
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ ./src/
+COPY app/ ./app/
+COPY models/ ./models/
+
+# Vertex injects AIP_HTTP_PORT (default 8080) and AIP_*_ROUTE.
+CMD exec uvicorn app.vertex:app --host 0.0.0.0 --port ${AIP_HTTP_PORT:-8080}

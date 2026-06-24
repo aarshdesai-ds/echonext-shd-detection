@@ -1,0 +1,8 @@
+# Build the Vertex prediction image with Cloud Build (no local Docker needed).
+#   gcloud builds submit --config cloudbuild.vertex.yaml --substitutions=_IMAGE=<uri> .
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-f", "Dockerfile.vertex", "-t", "${_IMAGE}", "."]
+images: ["${_IMAGE}"]
+options:
+  machineType: E2_HIGHCPU_8
