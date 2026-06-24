@@ -126,3 +126,29 @@ class ModelRegistry:
         snapshot_download(repo_id=repo_id, repo_type="model", local_dir=self.root,
                           allow_patterns=[f"{version}/*", INDEX_NAME], token=token)
         return self.path(version)
+
+    # ── Google Cloud Storage (primary backend for the GCP deployment) ───────────
+    def push_to_gcs(self, version: str, bucket: str, prefix: str = "models") -> str:
+        """Upload a version's bundle (+ shared index) to gs://<bucket>/<prefix>/."""
+        from google.cloud import storage
+        bkt = storage.Client().bucket(bucket)
+        src = self.path(version)
+        for fn in os.listdir(src):
+            bkt.blob(f"{prefix}/{version}/{fn}").upload_from_filename(os.path.join(src, fn))
+        bkt.blob(f"{prefix}/{INDEX_NAME}").upload_from_filename(self.index_path)
+        return f"gs://{bucket}/{prefix}/{version}"
+
+    def pull_from_gcs(self, version: str, bucket: str, prefix: str = "models") -> str:
+        """Download a version's bundle (+ shared index) from GCS into the registry."""
+        from google.cloud import storage
+        client = storage.Client()
+        dst = self.path(version)
+        os.makedirs(dst, exist_ok=True)
+        for blob in client.list_blobs(bucket, prefix=f"{prefix}/{version}/"):
+            fn = os.path.basename(blob.name)
+            if fn:
+                blob.download_to_filename(os.path.join(dst, fn))
+        idx = client.bucket(bucket).blob(f"{prefix}/{INDEX_NAME}")
+        if idx.exists():
+            idx.download_to_filename(self.index_path)
+        return dst

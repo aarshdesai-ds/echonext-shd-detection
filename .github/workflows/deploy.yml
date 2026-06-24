@@ -1,8 +1,8 @@
 name: Deploy to Cloud Run
 
-# Builds the inference image (with the model bundle pulled from the Hugging Face
-# Hub) and deploys it to Cloud Run. Triggers on push to main after CI passes,
-# or manually. See infra/DEPLOY.md for the one-time GCP/HF setup.
+# Pulls the model bundle from GCS, bakes it into the image, and deploys the
+# combined API+demo service to Cloud Run. Runs after CI passes, or manually.
+# See infra/DEPLOY.md for the one-time GCP setup.
 
 on:
   workflow_run:
@@ -13,28 +13,21 @@ on:
 
 env:
   PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-  REGION: ${{ vars.GCP_REGION }}            # e.g. us-central1
-  SERVICE: echonext-shd-api
-  REPO: echonext                            # Artifact Registry repo
-  HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}  # e.g. aarshdesai04/echonext-shd-models
+  REGION: ${{ vars.GCP_REGION }}              # e.g. us-central1
+  SERVICE: echonext-shd
+  REPO: echonext                              # Artifact Registry repo
+  GCS_BUCKET: ${{ vars.GCS_BUCKET }}          # bucket holding the model registry
+  MODEL_VERSION: ${{ vars.MODEL_VERSION }}    # e.g. v1-cnn-ens5
 
 jobs:
   deploy:
-    # only run if CI succeeded (or manual dispatch)
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write                       # for Workload Identity Federation
+      id-token: write                         # for Workload Identity Federation
     steps:
       - uses: actions/checkout@v4
-
-      - name: Fetch model bundle from Hugging Face Hub
-        run: |
-          pip install --quiet "huggingface_hub[cli]"
-          huggingface-cli download "$HF_MODEL_REPO" --repo-type model --local-dir models
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # only needed if the model repo is private
 
       - id: auth
         uses: google-github-actions/auth@v2
@@ -43,6 +36,12 @@ jobs:
           service_account: ${{ secrets.GCP_DEPLOY_SA }}
 
       - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Fetch model bundle from GCS
+        run: |
+          mkdir -p models
+          gcloud storage cp "gs://${GCS_BUCKET}/models/${MODEL_VERSION}/*" models/
+          ls -la models
 
       - name: Build & push image
         run: |

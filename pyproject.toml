@@ -11,7 +11,8 @@ dependencies = ["numpy<2.0"]   # heavy deps (tensorflow, hf) installed via requi
 
 [project.optional-dependencies]
 serve = ["tensorflow-cpu==2.18.0", "keras==3.*", "fastapi", "uvicorn[standard]", "pydantic>=2"]
-registry = ["huggingface_hub>=0.24"]
+registry = ["google-cloud-storage>=2.0"]   # GCS-backed model registry
+hf = ["huggingface_hub>=0.24"]              # optional HF Hub backend
 
 [tool.setuptools.packages.find]
 where = ["src"]

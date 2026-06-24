@@ -3,8 +3,11 @@
 Endpoints
 ---------
 GET  /healthz   -> liveness/readiness (used by Cloud Run + CI smoke test)
-GET  /          -> service + model metadata
+GET  /info      -> service + model metadata
 POST /predict   -> SHD probability + decision for one ECG
+
+In the combined Cloud Run image (`app.serve:app`) the Gradio demo is mounted at
+`/`; this module keeps the pure API so it stays independently importable/testable.
 """
 from __future__ import annotations
 
@@ -65,8 +68,8 @@ def healthz():
     return {"status": "ok"}
 
 
-@app.get("/")
-def root():
+@app.get("/info")
+def info():
     p = get_predictor()
     return {
         "service": "EchoNext-SHD",

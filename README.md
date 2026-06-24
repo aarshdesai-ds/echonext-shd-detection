@@ -4,7 +4,8 @@ End-to-end ML system that detects **structural heart disease (SHD)** from a
 standard 12-lead ECG. A 5-seed 1D-CNN ensemble (with clinical-feature fusion)
 **matches** the published [EchoNext](https://www.nature.com/articles/s41586-025-09227-0)
 baseline on AUROC and **beats** it on AUPRC — using ~16× less training data —
-served as a containerized API on Cloud Run with a live Gradio demo.
+served on Google Cloud Run as a single container exposing both a JSON API and an
+interactive Gradio demo.
 
 > ⚠️ **Research/demo only. Not a medical device.** See [model_card.md](model_card.md).
 
@@ -15,7 +16,7 @@ served as a containerized API on Cloud Run with a live Gradio demo.
 | **Brier** | 0.158 | — | — |
 | Train size | ~72k ECGs | | 1.2M ECG–echo pairs |
 
-🔗 **Live demo:** [HF Spaces](https://huggingface.co/spaces/aarshdesai04/echonext-shd-demo) _(deploy in progress)_ · **API:** Cloud Run _(deploy in progress)_
+🔗 **Live demo + API:** single Cloud Run service — demo at `/`, API at `/predict`, Swagger at `/docs` _(deploy in progress)_
 
 ## What's interesting here (engineering)
 - **Diagnosed and fixed a broken baseline**: the original 2D-CNN used `(1,1)`
@@ -29,26 +30,29 @@ served as a containerized API on Cloud Run with a live Gradio demo.
 
 ## Architecture
 ```
-                ┌─ Hugging Face Spaces ─┐      ┌──────── GCP Cloud Run ────────┐
- ECG + clinical │   Gradio demo (app/    │      │  FastAPI (app/api)             │
-   features  ─► │   demo) → EnsemblePred │      │  /predict /healthz             │
-                └────────────────────────┘      │  Docker, scale-to-zero         │
-                          ▲                      └───────────────▲───────────────┘
-                          │ in-process                           │ image + models
-              ┌───────────┴───────────────────────────┐         │
-              │ shd/ package: model.py, infer.py        │   GitHub Actions
-              │ EnsemblePredictor (5 models + TTA + scaler)   CI (lint+test) → CD (build+deploy)
-              └─────────────────────────────────────────┘   models pulled from HF Hub
+  Colab training ──► deploy_bundle ──push──► gs://<bucket>/models/<version>/
+                                                      │ pulled at build time
+                                                      ▼
+   GitHub Actions:  CI (ruff + pytest) ─► CD (docker build → Artifact Registry)
+                                                      │
+                                                      ▼
+                       ┌──────────── GCP Cloud Run (scale-to-zero) ───────────┐
+        ECG + 7        │  app.serve = FastAPI + Gradio (one container):        │
+   clinical feats ──►  │    /  demo   ·   /predict API   ·   /healthz /info /docs│
+                       │  shd.EnsemblePredictor → 5 models + TTA + tabular scaler│
+                       └───────────────────────────────────────────────────────┘
 ```
 
 ## Repo layout
 ```
-src/shd/        model.py (architecture + custom layers), infer.py (EnsemblePredictor)
-app/api/        FastAPI service  (Cloud Run)
-app/demo/       Gradio app       (HF Spaces)
+src/shd/        model.py (architecture + custom layers), infer.py (EnsemblePredictor),
+                registry.py (versioned GCS model store)
+app/api/        FastAPI service (pure API; importable/testable on its own)
+app/demo/       Gradio app
+app/serve.py    combined Cloud Run entrypoint: API + demo mounted at /
 tests/          pytest (CI gate; model-dependent tests self-skip)
-.github/        ci.yml (lint+test) · deploy.yml (build+push+deploy)
-infra/DEPLOY.md one-time GCP/HF setup + cost guardrails
+.github/        ci.yml (lint+test) · deploy.yml (GCS pull → build → Cloud Run)
+infra/DEPLOY.md one-time GCP setup + cost guardrails
 Dockerfile · requirements*.txt · model_card.md · pyproject.toml · Makefile
 ```
 
@@ -77,23 +81,20 @@ writes the deploy bundle (models + scaler + sample ECGs + metrics) consumed by
 this service.
 
 ## Model registry
-Trained ensembles are **versioned out-of-band** (never committed) so they can be
-reloaded without retraining. [`src/shd/registry.py`](src/shd/registry.py) backs a
-two-tier store: a durable local root (Google Drive) and the Hugging Face Hub
-([`aarshdesai04/echonext-shd-models`](https://huggingface.co/aarshdesai04/echonext-shd-models)),
-which is also what the Cloud Run deploy pulls from.
+Trained ensembles are **versioned in Google Cloud Storage** (never committed) so
+they can be reloaded without retraining — and it's the same store the Cloud Run
+deploy pulls from at build time. [`src/shd/registry.py`](src/shd/registry.py)
+manages versioned bundles (a durable local root, e.g. Google Drive, plus GCS).
 
 ```python
 from shd.registry import ModelRegistry
-HF = "aarshdesai04/echonext-shd-models"
+BUCKET = "<your-gcs-bucket>"
 reg = ModelRegistry("registry")
-reg.pull_from_hf("registry.json", HF)     # fetch the index first
-best = reg.best("AUPRC")
-reg.pull_from_hf(best, HF)                 # fetch that version's bundle
-predictor = reg.load_predictor(best)       # best ensemble, no retraining
+reg.pull_from_gcs("v1-cnn-ens5", BUCKET)   # fetch a version's bundle + index
+predictor = reg.load_predictor("v1-cnn-ens5")   # no retraining
 ```
 `reg.list()` shows every saved version with its metrics; `reg.best("AUPRC")`
-selects the top one.
+selects the top one. (An optional Hugging Face Hub backend also exists.)
 
 ## Reproducibility
 The runs are **seeded** (`tf.keras.utils.set_random_seed`), which controls weight
