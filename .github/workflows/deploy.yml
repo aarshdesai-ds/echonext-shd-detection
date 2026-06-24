@@ -1,0 +1,65 @@
+name: Deploy to Cloud Run
+
+# Builds the inference image (with the model bundle pulled from the Hugging Face
+# Hub) and deploys it to Cloud Run. Triggers on push to main after CI passes,
+# or manually. See infra/DEPLOY.md for the one-time GCP/HF setup.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GCP_REGION }}            # e.g. us-central1
+  SERVICE: echonext-shd-api
+  REPO: echonext                            # Artifact Registry repo
+  HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}  # e.g. yourname/echonext-shd-models
+
+jobs:
+  deploy:
+    # only run if CI succeeded (or manual dispatch)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write                       # for Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch model bundle from Hugging Face Hub
+        run: |
+          pip install --quiet "huggingface_hub[cli]"
+          huggingface-cli download "$HF_MODEL_REPO" --repo-type model --local-dir models
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # only needed if the model repo is private
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build & push image
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${SERVICE}:${GITHUB_SHA::7}"
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --image "$IMAGE" \
+            --region "$REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 2Gi --cpu 1 \
+            --min-instances 0 --max-instances 2 \
+            --concurrency 4 \
+            --port 8080

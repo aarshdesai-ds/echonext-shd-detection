@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "echonext-shd"
+version = "0.1.0"
+description = "Structural heart disease detection from 12-lead ECG (EchoNext reimplementation)."
+requires-python = ">=3.10"
+dependencies = ["numpy<2.0"]   # heavy deps (tensorflow, hf) installed via requirements*.txt
+
+[project.optional-dependencies]
+serve = ["tensorflow-cpu==2.18.0", "keras==3.*", "fastapi", "uvicorn[standard]", "pydantic>=2"]
+registry = ["huggingface_hub>=0.24"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E402"]  # deliberate late imports (sys.path shims, lazy heavy deps)
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]

@@ -1,0 +1,4 @@
+# Extra deps for the Hugging Face Spaces Gradio demo (on top of requirements.txt).
+-r requirements.txt
+gradio==4.*
+matplotlib==3.*

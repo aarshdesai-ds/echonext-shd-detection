@@ -1,0 +1,7 @@
+# Serving runtime (CPU). Pinned loosely; lock with pip-compile for production.
+tensorflow-cpu==2.18.0
+keras==3.*
+numpy<2.0
+fastapi==0.115.*
+uvicorn[standard]==0.32.*
+pydantic==2.*

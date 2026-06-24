@@ -1,0 +1,19 @@
+# model artifacts (pulled from HF Hub / Drive — never committed)
+models/
+*.keras
+*.npz
+!sample_*.npz
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# misc
+.DS_Store
+.ipynb_checkpoints/
+wandb/
