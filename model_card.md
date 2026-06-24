@@ -33,9 +33,15 @@ Trained on ~72k ECGs — roughly **16× less data** than the 1.2M-pair paper mod
 yet statistically on par on AUROC and ahead on AUPRC.
 
 ## Training data & limitations
-- Derived from the EchoNext modeling tables; train set resampled toward balance
-  while validation/test reflect natural ~0.43 prevalence.
-- Single source distribution → external generalization is unverified.
+- Source: the public **EchoNext dataset on PhysioNet**
+  (https://physionet.org/content/echonext/) — 100k de-identified 12-lead ECGs
+  (250 Hz) with echo-confirmed SHD labels + demographic/interval metadata, from
+  Columbia University Irving Medical Center. Requires PhysioNet credentialed
+  access; not redistributed here.
+- Train set resampled toward balance; validation/test reflect natural ~0.43
+  prevalence.
+- **Single-site** distribution (one health system) → external generalization to
+  other populations/devices is unverified.
 - Subgroup performance (age, sex) has not been audited for fairness; do not
   assume equal performance across groups.
 

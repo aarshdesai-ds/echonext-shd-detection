@@ -107,6 +107,26 @@ library versions, and hyperparameters (`metrics.json → provenance`). For a
 bit-exact reference run, enable `tf.config.experimental.enable_op_determinism()`
 (slower, and disable mixed precision).
 
-## License & data
-Code: MIT. The ECG dataset is **not** redistributed here; sample inputs are
-de-identified arrays for demonstration only.
+## Data
+Trained on the public **[EchoNext dataset (PhysioNet)](https://physionet.org/content/echonext/)** —
+100,000 de-identified 12-lead ECGs (250 Hz, `N×1×2500×12`) with
+echocardiogram-confirmed structural-heart-disease labels and demographic/interval
+metadata, from Columbia University Irving Medical Center. Access requires a
+PhysioNet credentialed account and acceptance of the dataset's license/DUA.
+
+The dataset is **not redistributed** in this repo; the sample inputs in the demo
+are a handful of de-identified records for illustration only. To reproduce, obtain
+the data from PhysioNet and point the training notebook at it.
+
+**Citation:**
+> EchoNext: A Dataset for Detecting Echocardiogram-Confirmed Structural Heart
+> Disease from ECGs. PhysioNet. https://physionet.org/content/echonext/
+>
+> Goldberger AL, et al. PhysioBank, PhysioToolkit, and PhysioNet. *Circulation* 101(23):e215–e220, 2000.
+>
+> Underlying method: *Detecting structural heart disease from electrocardiograms
+> using AI.* Nature (2025). https://www.nature.com/articles/s41586-025-09227-0
+
+## License
+Code: MIT (see [LICENSE](LICENSE)). Data: governed by the PhysioNet EchoNext
+license/DUA — not covered by this repo's license.
