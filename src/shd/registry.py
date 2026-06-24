@@ -24,7 +24,6 @@ import json
 import os
 import shutil
 import time
-from typing import Optional
 
 INDEX_NAME = "registry.json"
 BUNDLE_GLOBS = ("ens_seed*.keras", "tabular_scaler.npz", "sample_ecgs.npz", "metrics.json")
@@ -59,7 +58,7 @@ class ModelRegistry:
         return os.path.join(self.root, version)
 
     # ── save ───────────────────────────────────────────────────────────────────
-    def save(self, version: str, src_dir: str, metrics: Optional[dict] = None,
+    def save(self, version: str, src_dir: str, metrics: dict | None = None,
              overwrite: bool = False) -> str:
         """Copy a bundle (the files matching BUNDLE_GLOBS) from ``src_dir`` into
         ``<root>/<version>`` and record it in the index."""
@@ -98,12 +97,12 @@ class ModelRegistry:
             raise ValueError("registry is empty")
         scored = [(v, _flatten_metric(meta.get("metrics", {}).get(metric)))
                   for v, meta in idx.items()]
-        scored = [(v, s) for v, s in scored if isinstance(s, (int, float))]
+        scored = [(v, s) for v, s in scored if isinstance(s, int | float)]
         if not scored:
             raise ValueError(f"no versions have numeric metric {metric!r}")
         return (max if higher_is_better else min)(scored, key=lambda x: x[1])[0]
 
-    def load_predictor(self, version: Optional[str] = None, **kw):
+    def load_predictor(self, version: str | None = None, **kw):
         """Reload an ensemble for inference — no training. Defaults to best AUPRC."""
         from .infer import EnsemblePredictor
         version = version or self.best()
@@ -111,7 +110,7 @@ class ModelRegistry:
 
     # ── Hugging Face Hub (optional) ─────────────────────────────────────────────
     def push_to_hf(self, version: str, repo_id: str, private: bool = True,
-                   token: Optional[str] = None) -> str:
+                   token: str | None = None) -> str:
         from huggingface_hub import HfApi, create_repo
         create_repo(repo_id, repo_type="model", private=private, exist_ok=True, token=token)
         api = HfApi()
@@ -122,7 +121,7 @@ class ModelRegistry:
                         repo_id=repo_id, repo_type="model", token=token)
         return f"https://huggingface.co/{repo_id}/tree/main/{version}"
 
-    def pull_from_hf(self, version: str, repo_id: str, token: Optional[str] = None) -> str:
+    def pull_from_hf(self, version: str, repo_id: str, token: str | None = None) -> str:
         from huggingface_hub import snapshot_download
         snapshot_download(repo_id=repo_id, repo_type="model", local_dir=self.root,
                           allow_patterns=[f"{version}/*", INDEX_NAME], token=token)

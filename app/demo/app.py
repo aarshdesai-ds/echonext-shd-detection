@@ -8,15 +8,16 @@ from __future__ import annotations
 import os
 import sys
 
-import numpy as np
 import gradio as gr
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 # allow `from shd...` when running from repo root or Spaces
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-from shd.infer import EnsemblePredictor, TABULAR_ORDER  # noqa: E402
+from shd.infer import TABULAR_ORDER, EnsemblePredictor  # noqa: E402
 
 MODEL_DIR = os.environ.get("MODEL_DIR", "models")
 LEAD_NAMES = ["I", "II", "III", "aVR", "aVL", "aVF", "V1", "V2", "V3", "V4", "V5", "V6"]
@@ -35,7 +36,8 @@ def _plot_ecg(wave):
     for i, ax in enumerate(axes.T.ravel()):
         ax.plot(wave[:, i], lw=0.6)
         ax.set_ylabel(LEAD_NAMES[i], rotation=0, labelpad=14, fontsize=8)
-        ax.set_yticks([]); ax.grid(alpha=0.2)
+        ax.set_yticks([])
+        ax.grid(alpha=0.2)
     fig.suptitle("12-lead ECG (10 s)", fontsize=12)
     fig.tight_layout()
     return fig
@@ -51,7 +53,7 @@ def run(choice):
         "Risk band": pred.risk_band,
         "Ground truth": "SHD" if y else "normal",
     }
-    tab_str = "\n".join(f"- {k}: {v:g}" for k, v in zip(TABULAR_ORDER, tab))
+    tab_str = "\n".join(f"- {k}: {v:g}" for k, v in zip(TABULAR_ORDER, tab, strict=False))
     return _plot_ecg(wave), label, tab_str
 
 

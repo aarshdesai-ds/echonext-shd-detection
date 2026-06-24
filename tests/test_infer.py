@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pytest
 
-from shd.infer import EnsemblePredictor, SEQ_LEN, N_LEADS, TABULAR_ORDER
+from shd.infer import N_LEADS, SEQ_LEN, TABULAR_ORDER, EnsemblePredictor
 
 MODEL_DIR = os.environ.get("MODEL_DIR", "models")
 _HAS_MODELS = os.path.isdir(MODEL_DIR) and any(

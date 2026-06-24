@@ -27,4 +27,4 @@ ignore = ["E402"]  # deliberate late imports (sys.path shims, lazy heavy deps)
 
 [tool.pytest.ini_options]
 addopts = "-q"
-pythonpath = ["src"]
+pythonpath = ["src", "."]   # src for `shd`, root for `app`

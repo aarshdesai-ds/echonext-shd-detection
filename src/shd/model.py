@@ -7,6 +7,7 @@ augmentation layer) is a no-op at inference time (`training=False`).
 from __future__ import annotations
 
 import math
+
 import keras
 from keras import layers
 
@@ -34,7 +35,8 @@ class ECGAugment(layers.Layer):
         import tensorflow as tf
         dt = x.dtype
         b, T, L = tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2]
-        scale = tf.random.uniform((b, 1, 1), 1.0 - self.scale_range, 1.0 + self.scale_range, dtype=dt)
+        scale = tf.random.uniform((b, 1, 1), 1.0 - self.scale_range,
+                                  1.0 + self.scale_range, dtype=dt)
         x = x * scale
         x = x + tf.random.normal(tf.shape(x), stddev=self.noise_std, dtype=dt)
         t = tf.reshape(tf.linspace(tf.cast(0.0, dt), tf.cast(1.0, dt), T), (1, -1, 1))

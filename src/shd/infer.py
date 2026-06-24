@@ -13,8 +13,8 @@ Data contract
 """
 from __future__ import annotations
 
-import json
 import glob
+import json
 import os
 from dataclasses import dataclass
 
@@ -44,6 +44,7 @@ class EnsemblePredictor:
     def __init__(self, model_dir: str, tta_shifts=(0, -75, 75)):
         # heavy imports are local so the module imports cheaply (e.g. for tests)
         import keras
+
         from .model import CUSTOM_OBJECTS
 
         self.model_dir = model_dir

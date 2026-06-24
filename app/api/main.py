@@ -14,7 +14,7 @@ from functools import lru_cache
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
-from shd.infer import EnsemblePredictor, SEQ_LEN, N_LEADS, TABULAR_ORDER
+from shd.infer import N_LEADS, SEQ_LEN, TABULAR_ORDER, EnsemblePredictor
 
 MODEL_DIR = os.environ.get("MODEL_DIR", "models")
 
@@ -82,6 +82,6 @@ def predict(req: PredictRequest):
     try:
         pred = get_predictor().predict(req.waveform, req.tabular)
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e)) from e
     return PredictResponse(probability=pred.probability, flag=pred.flag,
                            threshold=pred.threshold, risk_band=pred.risk_band)
