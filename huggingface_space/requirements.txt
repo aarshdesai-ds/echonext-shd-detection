@@ -1,0 +1,9 @@
+# Hugging Face Space deps. The shd package (model + inference + synthetic) is
+# pulled from the public GitHub repo; TF-CPU/gradio/matplotlib power the demo.
+git+https://github.com/aarshdesai-ds/echonext-shd-detection.git
+tensorflow-cpu==2.18.0
+keras==3.*
+gradio==4.*
+matplotlib==3.*
+huggingface_hub>=0.24
+numpy<2.0
