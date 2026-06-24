@@ -114,9 +114,11 @@ echocardiogram-confirmed structural-heart-disease labels and demographic/interva
 metadata, from Columbia University Irving Medical Center. Access requires a
 PhysioNet credentialed account and acceptance of the dataset's license/DUA.
 
-The dataset is **not redistributed** in this repo; the sample inputs in the demo
-are a handful of de-identified records for illustration only. To reproduce, obtain
-the data from PhysioNet and point the training notebook at it.
+The dataset is governed by the **PhysioNet Restricted Health Data License 1.5.0**
+and is **not redistributed** in this repo. The public demo ships **no dataset
+records** — it uses procedurally-generated **synthetic** ECGs ([`shd.synthetic`](src/shd/synthetic.py))
+plus user uploads, so predictions there are illustrative only. To reproduce the
+real metrics, obtain the data from PhysioNet (credentialed) and run the notebook.
 
 **Citation:**
 > EchoNext: A Dataset for Detecting Echocardiogram-Confirmed Structural Heart

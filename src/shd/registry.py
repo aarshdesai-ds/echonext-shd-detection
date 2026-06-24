@@ -26,7 +26,9 @@ import shutil
 import time
 
 INDEX_NAME = "registry.json"
-BUNDLE_GLOBS = ("ens_seed*.keras", "tabular_scaler.npz", "sample_ecgs.npz", "metrics.json")
+# Note: real ECG samples are NOT bundled (PhysioNet DUA forbids redistribution);
+# the public demo uses synthetic inputs (shd.synthetic).
+BUNDLE_GLOBS = ("ens_seed*.keras", "tabular_scaler.npz", "metrics.json")
 
 
 def _flatten_metric(m):
