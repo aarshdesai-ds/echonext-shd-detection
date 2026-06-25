@@ -77,7 +77,7 @@ with gr.Blocks(title="EchoNext-SHD") as demo:
         sel = gr.Dropdown(EX_NAMES, value=EX_NAMES[0], label="Synthetic ECG")
         b1 = gr.Button("Predict", variant="primary")
         with gr.Row():
-            p1 = gr.Plot(label="ECG"); o1 = gr.Label(label="Prediction")
+            p1 = gr.Plot(label="ECG"); o1 = gr.JSON(label="Prediction")
         b1.click(run_example, sel, [p1, o1])
         demo.load(run_example, sel, [p1, o1])
     with gr.Tab("Upload your own"):
@@ -94,7 +94,7 @@ with gr.Blocks(title="EchoNext-SHD") as demo:
             age = gr.Number(label="age_at_ecg", value=60)
         b2 = gr.Button("Predict", variant="primary")
         with gr.Row():
-            p2 = gr.Plot(label="ECG"); o2 = gr.Label(label="Prediction")
+            p2 = gr.Plot(label="ECG"); o2 = gr.JSON(label="Prediction")
         b2.click(run_upload, [up, sex, vrate, arate, pr, qrs, qtc, age], [p2, o2])
     gr.Markdown(f"Feature order: `{TABULAR_ORDER}`")
 
