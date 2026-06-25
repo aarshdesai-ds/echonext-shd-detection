@@ -99,4 +99,6 @@ with gr.Blocks(title="EchoNext-SHD") as demo:
     gr.Markdown(f"Feature order: `{TABULAR_ORDER}`")
 
 if __name__ == "__main__":
-    demo.launch()
+    # 0.0.0.0:7860 for HF Spaces; show_api=False avoids a gradio 4.44
+    # schema-introspection bug (TypeError: 'bool' is not iterable).
+    demo.launch(server_name="0.0.0.0", server_port=7860, show_api=False)
