@@ -59,8 +59,9 @@ def run_example(name):
 def run_upload(file, sex, vrate, arate, pr, qrs, qtc, age):
     if file is None:
         raise gr.Error("Upload a .npy array of shape (2500, 12) first.")
+    path = file if isinstance(file, str) else file.name   # gradio 5 passes a path str
     try:
-        wave = np.load(file.name)
+        wave = np.load(path)
         return _render(wave, [sex, vrate, arate, pr, qrs, qtc, age])
     except ValueError as e:
         raise gr.Error(str(e)) from e
@@ -81,7 +82,7 @@ with gr.Blocks(title="EchoNext-SHD") as demo:
         b1 = gr.Button("Predict", variant="primary")
         with gr.Row():
             p1 = gr.Plot(label="ECG")
-            o1 = gr.Label(label="Prediction")
+            o1 = gr.JSON(label="Prediction")
         b1.click(run_example, sel, [p1, o1])
         demo.load(run_example, sel, [p1, o1])
 
@@ -101,7 +102,7 @@ with gr.Blocks(title="EchoNext-SHD") as demo:
         b2 = gr.Button("Predict", variant="primary")
         with gr.Row():
             p2 = gr.Plot(label="ECG")
-            o2 = gr.Label(label="Prediction")
+            o2 = gr.JSON(label="Prediction")
         b2.click(run_upload, [up, sex, vrate, arate, pr, qrs, qtc, age], [p2, o2])
 
     gr.Markdown(f"Feature order: `{TABULAR_ORDER}`")
