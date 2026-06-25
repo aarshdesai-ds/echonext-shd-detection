@@ -1,9 +1,7 @@
-# Hugging Face Space deps. The shd package (model + inference + synthetic) is
-# pulled from the public GitHub repo; TF-CPU/gradio/matplotlib power the demo.
+# HF Space deps. Gradio itself is installed by the Space SDK (latest 5.x, since
+# README has no sdk_version pin) — keeping it out of here avoids version clashes.
 git+https://github.com/aarshdesai-ds/echonext-shd-detection.git
 tensorflow-cpu==2.18.0
-keras==3.*
-gradio==4.*
 matplotlib==3.*
-huggingface_hub>=0.24,<1.0   # gradio 4.44 needs HfFolder, removed in hub 1.0
+huggingface_hub>=0.24
 numpy<2.0

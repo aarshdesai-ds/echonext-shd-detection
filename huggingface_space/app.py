@@ -1,4 +1,4 @@
-"""Hugging Face Spaces entry point — EchoNext-SHD demo.
+"""Hugging Face Spaces entry point — EchoNext-SHD demo (Gradio 5).
 
 DUA-safe: inputs are synthetic or user-uploaded; no PhysioNet records ship.
 Model weights are pulled at startup from a PRIVATE HF model repo using the
@@ -6,26 +6,14 @@ HF_TOKEN Space secret. The `shd` package is installed from GitHub (requirements.
 """
 import os
 
-# --- Workaround for a gradio 4.44 bug: gradio_client crashes generating the API
-# --- schema on boolean JSON-schema nodes ("TypeError: 'bool' is not iterable"),
-# --- which kills the app at startup on HF Spaces. Treat booleans as "Any".
-import gradio_client.utils as _gcu
-
-_orig_js2pt = _gcu._json_schema_to_python_type
-_orig_get_type = _gcu.get_type
-_gcu._json_schema_to_python_type = lambda s, d=None: (
-    "Any" if isinstance(s, bool) else _orig_js2pt(s, d))
-_gcu.get_type = lambda s: ("Any" if not isinstance(s, dict) else _orig_get_type(s))
-
-import gradio as gr  # noqa: E402
-import matplotlib  # noqa: E402
-import numpy as np  # noqa: E402
+import gradio as gr
+import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from huggingface_hub import snapshot_download  # noqa: E402
-
 from shd.infer import N_LEADS, SEQ_LEN, TABULAR_ORDER, EnsemblePredictor  # noqa: E402
 from shd.synthetic import synthetic_examples  # noqa: E402
 
@@ -34,7 +22,6 @@ HF_MODEL_REPO = os.environ.get("HF_MODEL_REPO", "aarshdesai04/echonext-shd-model
 VERSION = os.environ.get("MODEL_VERSION", "v1-cnn-ens5")
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-# download just this version's bundle from the private model repo
 _root = snapshot_download(HF_MODEL_REPO, repo_type="model",
                           allow_patterns=[f"{VERSION}/*"], token=HF_TOKEN)
 predictor = EnsemblePredictor(os.path.join(_root, VERSION))
@@ -71,8 +58,9 @@ def run_example(name):
 def run_upload(file, sex, vrate, arate, pr, qrs, qtc, age):
     if file is None:
         raise gr.Error("Upload a .npy of shape (2500, 12) first.")
+    path = file if isinstance(file, str) else file.name   # gradio 5 passes a path str
     try:
-        return _render(np.load(file.name), [sex, vrate, arate, pr, qrs, qtc, age])
+        return _render(np.load(path), [sex, vrate, arate, pr, qrs, qtc, age])
     except ValueError as e:
         raise gr.Error(str(e)) from e
 
@@ -81,8 +69,7 @@ with gr.Blocks(title="EchoNext-SHD") as demo:
     gr.Markdown(
         "# EchoNext-SHD — structural heart disease from a 12-lead ECG\n"
         "A 5-seed CNN ensemble. ⚠️ **Research/demo only — not a medical device.** "
-        "Inputs are **synthetic** or user-uploaded; no patient data is shipped. "
-        "Validated metrics are on the repo README."
+        "Inputs are **synthetic** or user-uploaded; no patient data is shipped."
     )
     with gr.Tab("Synthetic examples"):
         sel = gr.Dropdown(EX_NAMES, value=EX_NAMES[0], label="Synthetic ECG")
@@ -110,6 +97,4 @@ with gr.Blocks(title="EchoNext-SHD") as demo:
     gr.Markdown(f"Feature order: `{TABULAR_ORDER}`")
 
 if __name__ == "__main__":
-    # 0.0.0.0:7860 for HF Spaces; show_api=False avoids a gradio 4.44
-    # schema-introspection bug (TypeError: 'bool' is not iterable).
-    demo.launch(server_name="0.0.0.0", server_port=7860, show_api=False)
+    demo.launch(server_name="0.0.0.0", server_port=7860)
