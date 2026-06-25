@@ -5,5 +5,5 @@ tensorflow-cpu==2.18.0
 keras==3.*
 gradio==4.*
 matplotlib==3.*
-huggingface_hub>=0.24
+huggingface_hub>=0.24,<1.0   # gradio 4.44 needs HfFolder, removed in hub 1.0
 numpy<2.0
