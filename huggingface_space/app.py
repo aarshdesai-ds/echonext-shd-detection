@@ -6,9 +6,20 @@ HF_TOKEN Space secret. The `shd` package is installed from GitHub (requirements.
 """
 import os
 
-import gradio as gr
-import matplotlib
-import numpy as np
+# --- Workaround for a gradio 4.44 bug: gradio_client crashes generating the API
+# --- schema on boolean JSON-schema nodes ("TypeError: 'bool' is not iterable"),
+# --- which kills the app at startup on HF Spaces. Treat booleans as "Any".
+import gradio_client.utils as _gcu
+
+_orig_js2pt = _gcu._json_schema_to_python_type
+_orig_get_type = _gcu.get_type
+_gcu._json_schema_to_python_type = lambda s, d=None: (
+    "Any" if isinstance(s, bool) else _orig_js2pt(s, d))
+_gcu.get_type = lambda s: ("Any" if not isinstance(s, dict) else _orig_get_type(s))
+
+import gradio as gr  # noqa: E402
+import matplotlib  # noqa: E402
+import numpy as np  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
